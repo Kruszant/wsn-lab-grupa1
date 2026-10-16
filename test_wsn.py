@@ -18,6 +18,16 @@ import wsn_common as wc
 from node import Node
 from sink_manager import Manager
 
+def read_csv(path):
+    with open(path, encoding="utf-8") as f:       # zawsze zamykamy plik
+        return list(csv.DictReader(f))
+
+
+def read_json(path):
+    with open(path, encoding="utf-8") as f:
+        return json.load(f)
+
+
 SEC = 1_000_000_000          # fałszywy zegar: 1 s = 1e9 ns (time_scale = 1)
 
 
@@ -264,7 +274,7 @@ class TestSinkManager(unittest.TestCase):
 
     def events(self, m):
         m._files["management_log.csv"].flush()
-        return list(csv.DictReader(open(os.path.join(m.tmp, "management_log.csv"), encoding="utf-8")))
+        return read_csv(os.path.join(m.tmp, "management_log.csv"))
 
     def test_tabela_aktualizowana_tylko_komunikatami(self):
         m, clock, sent = make_manager()
@@ -360,7 +370,7 @@ class TestSinkManager(unittest.TestCase):
              "generated_ns": 1, "value": 20.5, "unit": "degC"}
         m.process(d, clock()); m.process(dict(d), clock())
         m._files["data_log.csv"].flush()
-        rows = list(csv.DictReader(open(os.path.join(m.tmp, "data_log.csv"), encoding="utf-8")))
+        rows = read_csv(os.path.join(m.tmp, "data_log.csv"))
         self.assertEqual([r["duplicate"] for r in rows], ["0", "1"])
         self.assertEqual(analyze.management_overhead([], rows)["data_packets"], 2)   # pakiety liczone wszystkie
 
@@ -479,25 +489,25 @@ class TestIntegracja(unittest.TestCase):
         out = tempfile.mkdtemp()
         try:
             run_experiment.run("config/sink_test_rdzenia.json", out, duration_s=40)
-            log = list(csv.DictReader(open(os.path.join(out, "management_log.csv"), encoding="utf-8")))
+            log = read_csv(os.path.join(out, "management_log.csv"))
             by = lambda ev: [r for r in log if r["event_type"] == ev]
             ack1 = [r for r in by("ACK_RECEIVED") if r["command_id"] == "cmd_001"]
             self.assertEqual((ack1[0]["result"], ack1[0]["config_version"]), ("APPLIED", "2"))
             err = [r for r in by("ERROR_RECEIVED") if r["command_id"] == "cmd_002"]
             self.assertEqual(err[0]["result"], "VALUE_OUT_OF_RANGE")
             self.assertTrue(any("duplicate" in r["details"] for r in by("ACK_RECEIVED")))
-            truth = json.load(open(os.path.join(out, "node_1_truth.json"), encoding="utf-8"))
+            truth = read_json(os.path.join(out, "node_1_truth.json"))
             self.assertEqual(truth["commands"]["commands_applied"], 2)       # cmd_001 i cmd_003
             self.assertEqual(truth["commands"]["duplicates_ignored"], 2)     # dwa ponowne wysłania
             self.assertEqual(truth["config_version"], 3)                     # nie 4 ani 5
             for n in ("node_2", "node_3"):                                   # inne nody nietknięte
-                t = json.load(open(os.path.join(out, f"{n}_truth.json"), encoding="utf-8"))
+                t = read_json(os.path.join(out, f"{n}_truth.json"))
                 self.assertEqual(t["config_version"], 1)
-            table = list(csv.DictReader(open(os.path.join(out, "state_table.csv"), encoding="utf-8")))
+            table = read_csv(os.path.join(out, "state_table.csv"))
             self.assertEqual({r["reported_config_version"] for r in table if r["node_id"] == "node_1"}, {"3"})
-            data = list(csv.DictReader(open(os.path.join(out, "data_log.csv"), encoding="utf-8")))
+            data = read_csv(os.path.join(out, "data_log.csv"))
             for n in ("node_1", "node_2", "node_3"):                         # sink odebrał wszystko (localhost)
-                t = json.load(open(os.path.join(out, f"{n}_truth.json"), encoding="utf-8"))
+                t = read_json(os.path.join(out, f"{n}_truth.json"))
                 self.assertEqual(len([r for r in data if r["node_id"] == n and r["duplicate"] == "0"]),
                                  t["sent_data"])
         finally:

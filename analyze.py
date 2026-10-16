@@ -42,13 +42,18 @@ def read_csv(path):
         return list(csv.DictReader(f))
 
 
+def read_json(path):
+    with open(path, encoding="utf-8") as f:
+        return json.load(f)
+
+
 def load_run(folder):
-    run = {"dir": folder, "meta": json.load(open(os.path.join(folder, "run_meta.json"), encoding="utf-8")),
+    run = {"dir": folder, "meta": read_json(os.path.join(folder, "run_meta.json")),
            "mgmt": read_csv(os.path.join(folder, "management_log.csv")),
            "status": read_csv(os.path.join(folder, "status_log.csv")),
            "data": read_csv(os.path.join(folder, "data_log.csv")), "truth": {}, "trace": {}}
     for path in sorted(glob.glob(os.path.join(folder, "*_truth.json"))):
-        t = json.load(open(path, encoding="utf-8"))
+        t = read_json(path)
         run["truth"][t["node_id"]] = t
         run["trace"][t["node_id"]] = read_csv(path.replace("_truth.json", "_energy_trace.csv"))
     return run
