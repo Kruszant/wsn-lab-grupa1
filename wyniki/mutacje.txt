@@ -1,0 +1,12 @@
+ZABITY   bool przechodzi jako liczba                             -> 1 test(ów), np. test_bool_nie_jest_poprawna_liczba
+ZABITY   duplikat polecenia wykonywany ponownie                  -> 2 test(ów), np. test_duplikat_nie_jest_wykonany_ponownie
+ZABITY   próg baterii: >= zamiast > (50.0 daje ACTIVE)           -> 3 test(ów), np. test_adaptacyjna_dokladnie_na_progach
+ZABITY   ERROR nie cofa wersji oczekiwanej                       -> 1 test(ów), np. test_error_cofa_wersje_oczekiwana
+ZABITY   UNREACHABLE nadpisuje reported_state                    -> 2 test(ów), np. test_failed_raportowany_a_potem_unreachable
+ZABITY   zmiana wersji PRZED walidacją                           -> 5 test(ów), np. test_poprawne_polecenie_ack_i_wersja
+ZABITY   brak kontroli typów pól w sinku                         -> 1 test(ów), np. test_zle_typy_pol_nie_zabijaja_sinka
+ZABITY   node bez STATUS nigdy nie jest UNREACHABLE              -> 1 test(ów), np. test_node_ktory_nigdy_sie_nie_odezwal_jest_unreachable
+ZABITY   odtwarzanie konfiguracji bez limitu prób                -> 1 test(ów), np. test_odtwarzanie_konfiguracji_jest_ograniczone
+ZABITY   czas reakcji mnożony przez time_scale                   -> 1 test(ów), np. test_czas_reakcji_z_zegara_sinka_nie_z_pola_noda
+
+Mutantów: 10, zabitych: 10, ocalałych: 0

@@ -12,7 +12,7 @@
   "default_status_period_ms": 2000,
   "command_timeout_ms": 1000,
   "max_retries": 3,
-  "table_print_s": 2,
+  "table_print_s": 0,
   "strategy": {
     "mode": "none",
     "degraded_below": 50.0,
@@ -23,6 +23,11 @@
       "SLEEP": 3000
     }
   },
+  "node_configs": [
+    "config/strat/node_1.json",
+    "config/strat/node_2.json",
+    "config/strat/node_3.json"
+  ],
   "scenario": [
     {
       "at_s": 6,
@@ -71,6 +76,12 @@
       "node": "node_1",
       "parameter": "sample_period_ms",
       "value": 1300
+    },
+    {
+      "at_s": 10,
+      "node": "node_3",
+      "parameter": "sample_period_ms",
+      "value": 900
     }
   ]
 }

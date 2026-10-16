@@ -2,27 +2,27 @@
   "node_id": "node_1",
   "final_state": "FAILED",
   "final_battery": 0.0,
-  "generated": 144,
-  "sent_data": 144,
-  "status_sent": 55,
+  "generated": 143,
+  "sent_data": 143,
+  "status_sent": 54,
   "config_version": 6,
-  "time_to_critical_s": 78.538,
+  "time_to_critical_s": 78.524,
   "state_time_s": {
-    "STARTING": 1.023,
-    "ACTIVE": 38.014,
-    "DEGRADED": 39.505,
-    "SLEEP": 78.987,
-    "FAILED": 42.495,
+    "STARTING": 1.003,
+    "ACTIVE": 38.029,
+    "DEGRADED": 39.509,
+    "SLEEP": 78.483,
+    "FAILED": 42.996,
     "STOPPED": 0.0
   },
   "mode_changes": [
     {
-      "t_s": 39.038,
+      "t_s": 39.032,
       "from": "ACTIVE",
       "to": "DEGRADED"
     },
     {
-      "t_s": 78.543,
+      "t_s": 78.541,
       "from": "DEGRADED",
       "to": "SLEEP"
     }

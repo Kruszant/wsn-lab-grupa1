@@ -3,7 +3,7 @@
   "port": 6102,
   "sink_port": 6000,
   "time_scale": 10,
-  "duration_s": 120,
+  "duration_s": 200,
   "seed": 102,
   "output_dir": "wyniki/domyslny",
   "sample_period_ms": 500,

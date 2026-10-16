@@ -6,18 +6,18 @@
   "sent_data": 137,
   "status_sent": 70,
   "config_version": 5,
-  "time_to_critical_s": 78.521,
+  "time_to_critical_s": 78.526,
   "state_time_s": {
-    "STARTING": 1.015,
-    "ACTIVE": 38.039,
-    "DEGRADED": 39.485,
-    "SLEEP": 58.493,
-    "FAILED": 62.982,
+    "STARTING": 1.003,
+    "ACTIVE": 38.028,
+    "DEGRADED": 39.509,
+    "SLEEP": 57.978,
+    "FAILED": 63.485,
     "STOPPED": 0.0
   },
   "mode_changes": [
     {
-      "t_s": 39.054,
+      "t_s": 39.03,
       "from": "ACTIVE",
       "to": "DEGRADED"
     },

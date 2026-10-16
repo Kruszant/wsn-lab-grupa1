@@ -47,6 +47,25 @@ REQUIRED_FIELDS = {
 }
 
 
+# oczekiwane typy pól (bool odrzucamy zawsze - patrz is_int)
+_INT_FIELDS = ("sequence", "status_sequence", "config_version", "generated_ns", "timestamp_ns",
+               "sample_period_ms", "sent_packets", "current_config_version")
+_STR_FIELDS = ("node_id", "unit", "operating_state", "command_id", "result", "reason", "alert_type",
+               "destination", "parameter")
+_NUM_FIELDS = ("value", "battery_level", "threshold")
+
+
+def bad_types(msg: dict) -> list:
+    """Pola o złym typie (np. status_sequence jako string). Komunikat z takim polem odrzucamy,
+    zamiast pozwolić, by wyjątek zatrzymał pętlę odbioru sinka."""
+    bad = [f for f in _INT_FIELDS if f in msg and not is_int(msg[f])]
+    bad += [f for f in _STR_FIELDS if f in msg and not isinstance(msg[f], str)]
+    if msg.get("type") != "CONFIG":              # w CONFIG `value` bywa tekstem (operating_state)
+        bad += [f for f in _NUM_FIELDS if f in msg and (isinstance(msg[f], bool)
+                or not isinstance(msg[f], (int, float)))]
+    return bad
+
+
 def now_ns() -> int:
     """Jedyny zegar projektu: monotoniczny, w nanosekundach."""
     return time.perf_counter_ns()

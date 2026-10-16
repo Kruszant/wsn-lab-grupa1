@@ -30,7 +30,7 @@ import socket
 import threading
 import time
 
-from wsn_common import (HOST, OPERATING_STATES, UNREACHABLE, SimClock, battery_mode,
+from wsn_common import (HOST, OPERATING_STATES, UNREACHABLE, SimClock, bad_types, battery_mode,
                         decode, encode, load_config, missing_fields, now_ns)
 
 REQUIRED = {"port": int, "node_ports": dict, "time_scale": (int, float), "duration_s": (int, float),
@@ -60,6 +60,8 @@ class Entry:
         self.queue = []                          # oczekujące zamiary (parameter, value, powód)
         self.last_intent = None
         self.last_packet = None
+        self.restore_attempts = 0                # ile razy odtwarzano konfigurację w tym okresie niespójności
+        self.restore_gave_up = False
         self.mismatch_open = False
         self.mismatch_start = 0
         self.blocked_until_ns = 0                # po ERROR nie ponawiamy od razu decyzji
@@ -154,16 +156,20 @@ class Manager:
         """Obsługa jednego odebranego komunikatu (rx_ns = czas odbioru na zegarze sinka)."""
         with self.lock:
             t = msg.get("type")
-            if t not in ("DATA", "STATUS", "ACK", "ERROR", "ALERT") or missing_fields(msg):
-                self.counts["malformed"] += 1
+            if t not in ("DATA", "STATUS", "ACK", "ERROR", "ALERT") or missing_fields(msg) or bad_types(msg):
+                self.counts["malformed"] += 1          # brak pola albo zły typ pola
                 return
             e = self.entries.get(msg["node_id"])
             if e is None:
                 self.counts["unknown_node"] += 1
                 return
             self._count("received", t)
-            {"DATA": self.on_data, "STATUS": self.on_status, "ACK": self.on_ack,
-             "ERROR": self.on_error, "ALERT": self.on_alert}[t](e, msg, rx_ns)
+            try:
+                {"DATA": self.on_data, "STATUS": self.on_status, "ACK": self.on_ack,
+                 "ERROR": self.on_error, "ALERT": self.on_alert}[t](e, msg, rx_ns)
+            except Exception as exc:                   # jeden zły komunikat nie może zabić sinka
+                self.counts["handler_errors"] = self.counts.get("handler_errors", 0) + 1
+                self._log(rx_ns, "HANDLER_ERROR", e.node_id, details=f"{t}: {type(exc).__name__}: {exc}")
 
     def on_data(self, e, m, now):
         dup = m["sequence"] in e.seen_data
@@ -183,9 +189,6 @@ class Manager:
                   f"seq={m['status_sequence']}" + (";stale_or_duplicate" if stale else ""))
         if stale:
             return                                # stary lub zdublowany STATUS nie rusza tabeli
-        self._writers["status_log.csv"].writerow([
-            now, e.node_id, m["status_sequence"], m["operating_state"], m["battery_level"],
-            m["sample_period_ms"], m["config_version"], m["sent_packets"], e.observed_state])
         e.last_status_seq = m["status_sequence"]
         if e.observed_state == UNREACHABLE:
             self._log(now, "NODE_REACHABLE", e.node_id, details="STATUS po przerwie")
@@ -195,6 +198,9 @@ class Manager:
         e.battery_level = m["battery_level"]
         e.sample_period_ms = m["sample_period_ms"]
         e.reported_config_version = m["config_version"]
+        self._writers["status_log.csv"].writerow([          # stan obserwowany PO aktualizacji tabeli
+            now, e.node_id, m["status_sequence"], m["operating_state"], m["battery_level"],
+            m["sample_period_ms"], m["config_version"], m["sent_packets"], e.observed_state])
         if e.expected_config_version is None:
             e.expected_config_version = m["config_version"]    # wersja bazowa przy pierwszym STATUS
         self._check_config(e, now)
@@ -218,7 +224,7 @@ class Manager:
                       m["config_version"], m["result"], "duplicate_ack")
             return
         late = rec["state"] == "GAVE_UP"
-        resp_ms = self.sim.sim_ms(now - rec["first_sent_ns"])
+        resp_ms = (now - rec["first_sent_ns"]) * 1e-6        # czas RZECZYWISTY [ms] (nie przeliczany przez time_scale)
         self._log(now, "ACK_RECEIVED", e.node_id, m["command_id"], rec["parameter"], "", rec["value"],
                   m["config_version"], m["result"], f"response_ms={resp_ms:.1f}" + (";late_ack" if late else ""))
         rec["state"] = "ACKED"
@@ -247,7 +253,7 @@ class Manager:
         elif rec["state"] in ("ACKED", "ERROR"):
             note = "duplicate_error"                  # powtórzona odpowiedź na duplikat polecenia
         else:
-            note = f"response_ms={self.sim.sim_ms(now - rec['first_sent_ns']):.1f}"
+            note = f"response_ms={(now - rec['first_sent_ns']) * 1e-6:.1f}"
         self._log(now, "ERROR_RECEIVED", e.node_id, m["command_id"], rec["parameter"] if rec else "",
                   "", rec["value"] if rec else "", m["current_config_version"], m["reason"], note)
         if rec is None or rec["state"] in ("ACKED", "ERROR"):
@@ -285,14 +291,21 @@ class Manager:
             self._log(now, "CONFIG_RESTORED", e.node_id, "", "config_version", "",
                       e.reported_config_version, e.reported_config_version, "",
                       f"cause={cause or 'version_reported_by_node'};duration_ms="
-                      f"{self.sim.sim_ms(now - e.mismatch_start):.1f}")
+                      f"{(now - e.mismatch_start) * 1e-6:.1f}")
+            e.restore_attempts, e.restore_gave_up = 0, False
         # niespójność bez żadnego polecenia w locie => odtwórz ostatni zamiar
         if (mismatch and e.pending_command_id is None and not e.queue and e.last_intent
                 and e.reported_config_version < e.expected_config_version):
             p, v = e.last_intent
-            e.queue.append((p, v, "restore_config"))
-            self._log(now, "RESTORE_SCHEDULED", e.node_id, "", p, "", v, "", "",
-                      "niespójność bez polecenia w locie")
+            if e.restore_attempts < self.cfg.get("max_restore_attempts", 3):
+                e.restore_attempts += 1                # ograniczenie: nie bombardujemy głuchego noda
+                e.queue.append((p, v, "restore_config"))
+                self._log(now, "RESTORE_SCHEDULED", e.node_id, "", p, "", v, "", "",
+                          f"niespójność bez polecenia w locie;attempt={e.restore_attempts}")
+            elif not e.restore_gave_up:
+                e.restore_gave_up = True
+                self._log(now, "RESTORE_GAVE_UP", e.node_id, "", p, "", v, "", "GAVE_UP",
+                          f"po {e.restore_attempts} próbach odtworzenia")
 
     # ------------------------------------------------------------------ strategia adaptacyjna
     def decide(self, e: Entry, now):
@@ -330,14 +343,18 @@ class Manager:
                 return
             for e in self.entries.values():
                 # 1) niedostępność: brak STATUS dłużej niż timeout (stan obserwowany)
-                if e.last_status_ns is not None and e.observed_state not in (UNREACHABLE, "STOPPED"):
-                    timeout_ms = max(self.cfg["status_timeout_ms"], 3 * e.status_period_ms)
-                    silence = now - e.last_status_ns
+                if e.observed_state not in (UNREACHABLE, "STOPPED"):
+                    # node, który nigdy nie przysłał STATUS, liczy ciszę od startu eksperymentu
+                    ref = e.last_status_ns if e.last_status_ns is not None else self.start_ns
+                    timeout_ms = (max(self.cfg["status_timeout_ms"], 3 * e.status_period_ms)
+                                  if self.cfg.get("adaptive_timeout", True) else self.cfg["status_timeout_ms"])
+                    silence = now - ref
                     if silence > self.sim.real_ns(timeout_ms):
                         e.observed_state = UNREACHABLE
+                        why = "" if e.last_status_ns is not None else ";never_reported"
                         self._log(now, "NODE_UNREACHABLE", e.node_id, "", "observed_state",
                                   e.reported_state, UNREACHABLE, e.reported_config_version, "",
-                                  f"silence_ms={self.sim.sim_ms(silence):.0f};reported_state={e.reported_state}")
+                                  f"silence_sim_ms={self.sim.sim_ms(silence):.0f};reported_state={e.reported_state}{why}")
                 # 2) timeout polecenia: ponowienie TEGO SAMEGO command_id (węzeł zdeduplikuje)
                 cid = e.pending_command_id
                 if cid:
@@ -368,7 +385,13 @@ class Manager:
         e = self.entries.get(a["node"])
         if e is None:
             return
-        if a.get("action") == "RESEND_LAST":
+        if a.get("action") == "RESEND":                 # ponowne wysłanie KONKRETNEGO polecenia (duplikat)
+            rec = self.commands.get(a["command_id"])
+            if rec:
+                self._log(now, "COMMAND_SENT", e.node_id, a["command_id"], rec["parameter"], "",
+                          rec["value"], rec["version"], "", "duplicate_test_resend")
+                self._send(e.node_id, rec["packet"])
+        elif a.get("action") == "RESEND_LAST":
             # test duplikatu: ten sam datagram, ten sam command_id
             if e.last_packet:
                 self._log(now, "COMMAND_SENT", e.node_id, e.last_packet["command_id"],
@@ -397,7 +420,7 @@ class Manager:
             for e in self.entries.values():          # domknij otwarte okresy niespójności
                 if e.mismatch_open:
                     self._log(end, "MISMATCH_OPEN_AT_END", e.node_id, details=
-                              f"duration_ms={self.sim.sim_ms(end - e.mismatch_start):.1f}")
+                              f"duration_ms={(end - e.mismatch_start) * 1e-6:.1f}")
             with open(os.path.join(self.out, "state_table.csv"), "w", newline="", encoding="utf-8") as f:
                 w = csv.writer(f)
                 w.writerow(["node_id", "observed_state", "reported_state", "last_status_ns", "battery_level",
@@ -458,10 +481,13 @@ def main():
     p.add_argument("--output-dir")
     p.add_argument("--time-scale", type=float)
     p.add_argument("--duration-s", type=float)
+    p.add_argument("--grace-s", type=float, help="czas na końcowe STATUS po duration_s (tryb ręczny: ok. 10-15)")
+    p.add_argument("--default-status-period-ms", type=int, help="zakładany okres STATUS nodów (do timeoutu)")
     a = p.parse_args()
     cfg = load_config(a.config, REQUIRED)
     for key, val in (("output_dir", a.output_dir), ("time_scale", a.time_scale),
-                     ("duration_s", a.duration_s)):
+                     ("duration_s", a.duration_s), ("grace_s", a.grace_s),
+                     ("default_status_period_ms", a.default_status_period_ms)):
         if val is not None:
             cfg[key] = val
     Manager(cfg).run()

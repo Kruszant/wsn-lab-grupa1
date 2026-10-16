@@ -1,19 +1,19 @@
 {
   "node_id": "node_3",
   "final_state": "STOPPED",
-  "final_battery": 48.2,
+  "final_battery": 47.7,
   "generated": 78,
   "sent_data": 78,
   "status_sent": 22,
   "config_version": 1,
   "time_to_critical_s": null,
   "state_time_s": {
-    "STARTING": 1.025,
-    "ACTIVE": 38.983,
+    "STARTING": 1.004,
+    "ACTIVE": 39.016,
     "DEGRADED": 0.0,
     "SLEEP": 0.0,
     "FAILED": 0.0,
-    "STOPPED": 0.001
+    "STOPPED": 0.002
   },
   "mode_changes": [],
   "mode_change_count": 0,

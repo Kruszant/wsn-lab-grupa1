@@ -58,6 +58,7 @@ class Node:
         self.battery_units = to_units(e["initial"])
         self.alert_units = to_units(e["low_battery_threshold"])
         self.alert_threshold = e["low_battery_threshold"]
+        self.sleep_replace = e.get("sleep_mode", "additional") == "replace"   # wariant B kosztu SLEEP
         self.alert_sent = False                                  # LOW_BATTERY tylko raz
         self.alert_due = False
         self.failed_due = False
@@ -137,7 +138,7 @@ class Node:
         if self.failed_due and self.state in OPERATING_STATES:
             self.failed_due = False
             self._set_state("FAILED")
-            self._emit_status()                         # ostatni raport "FAILED", potem cisza
+            self._emit_status()                         # ostatni raport "FAILED" (bateria 0: bez opłaty), potem cisza
 
     # ------------------------------------------------------------------ nadawanie
     def _emit_status(self):
@@ -163,9 +164,13 @@ class Node:
         with self.lock:
             if self.state not in OPERATING_STATES:
                 return
-            self.charge("generate")
-            if self.state == "SLEEP":
-                self.charge("sleep_cycle")              # narzut cyklu uśpienia (patrz README)
+            cheap = self.state == "SLEEP" and self.sleep_replace
+            if cheap:
+                self.charge("sleep_cycle")              # wariant B: cykl SLEEP zastępuje koszt pomiaru i wysyłki
+            else:
+                self.charge("generate")
+                if self.state == "SLEEP":
+                    self.charge("sleep_cycle")          # wariant A (domyślny): narzut ponad zwykły koszt
             if self.failed_due:
                 self._post()
                 return
@@ -174,7 +179,8 @@ class Node:
             value = (sg["base"] + sg["amplitude"] * math.sin(2 * math.pi * self._t() / sg["period_s"])
                      + self.rng.gauss(0, sg["noise_std"]))
             generated_ns = now_ns()
-            self.charge("send_data")
+            if not cheap:
+                self.charge("send_data")
             self.sent_packets += 1
             self._send({"type": "DATA", "node_id": self.id, "sequence": self.sequence,
                         "config_version": self.config_version, "generated_ns": generated_ns,
@@ -255,6 +261,7 @@ class Node:
         self.clock = SimClock(self.cfg["time_scale"], now_ns())
         self._trace("START")
         with self.lock:
+            self.charge("send_status")                  # każdy STATUS kosztuje (także pierwszy)
             self._emit_status()                         # pierwszy raport: STARTING
         startup_end = now_ns() + self.clock.real_ns(self.cfg["startup_ms"])
         while not self.stop_event.is_set() and self._t() < self.cfg["duration_s"]:
@@ -265,20 +272,22 @@ class Node:
                     self._set_state(self.initial_state)
                     self.next_sample_ns, self.next_status_ns = now, now
             if state in OPERATING_STATES:
-                if now >= self.next_sample_ns:
-                    self.do_sample()
-                    self.next_sample_ns += self.clock.real_ns(self.sample_ms)
-                    if self.next_sample_ns < now:       # opóźnienie: bez nadrabiania seriami
-                        self.next_sample_ns = now + self.clock.real_ns(self.sample_ms)
-                if now >= self.next_status_ns:
-                    self.send_status()
-                    self.next_status_ns += self.clock.real_ns(self.status_ms)
-                    if self.next_status_ns < now:
-                        self.next_status_ns = now + self.clock.real_ns(self.status_ms)
+                with self.lock:                         # next_* zmienia też wątek poleceń (_apply)
+                    if now >= self.next_sample_ns:
+                        self.do_sample()
+                        self.next_sample_ns += self.clock.real_ns(self.sample_ms)
+                        if self.next_sample_ns < now:   # opóźnienie: bez nadrabiania seriami
+                            self.next_sample_ns = now + self.clock.real_ns(self.sample_ms)
+                    if now >= self.next_status_ns:
+                        self.send_status()
+                        self.next_status_ns += self.clock.real_ns(self.status_ms)
+                        if self.next_status_ns < now:
+                            self.next_status_ns = now + self.clock.real_ns(self.status_ms)
             self.stop_event.wait(0.002)
         with self.lock:
             if self.state in OPERATING_STATES:          # normalne zakończenie
                 self._set_state("STOPPED")
+                self.charge("send_status")              # raport końcowy też kosztuje
                 self._emit_status()
         self.finish()
 
@@ -314,10 +323,11 @@ def main():
     p.add_argument("--output-dir", help="nadpisuje output_dir z konfiguracji")
     p.add_argument("--time-scale", type=float, help="nadpisuje time_scale")
     p.add_argument("--duration-s", type=float, help="nadpisuje duration_s (czas symulacji)")
+    p.add_argument("--status-period-ms", type=int, help="nadpisuje status_period_ms")
     a = p.parse_args()
     cfg = load_config(a.config, REQUIRED)
     for key, val in (("output_dir", a.output_dir), ("time_scale", a.time_scale),
-                     ("duration_s", a.duration_s)):
+                     ("duration_s", a.duration_s), ("status_period_ms", a.status_period_ms)):
         if val is not None:
             cfg[key] = val
     Node(cfg).run()

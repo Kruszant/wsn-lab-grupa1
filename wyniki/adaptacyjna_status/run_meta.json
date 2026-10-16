@@ -1,6 +1,6 @@
 {
-  "start_ns": 2762059557650708,
-  "end_ns": 2762079867042875,
+  "start_ns": 2764029129636875,
+  "end_ns": 2764049439168416,
   "time_scale": 10.0,
   "duration_s": 200.0,
   "strategy": "adaptive",
@@ -14,8 +14,8 @@
       "CONFIG": 15
     },
     "received": {
-      "STATUS": 165,
-      "DATA": 432,
+      "STATUS": 162,
+      "DATA": 429,
       "ACK": 15,
       "ALERT": 3
     },

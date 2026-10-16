@@ -219,6 +219,15 @@ class TestNodePolecenia(unittest.TestCase):
         n.on_command(config("c", "sample_period_ms", 1000, 2))
         self.assertEqual(sent[-1]["reason"], "NODE_NOT_READY")
 
+    def test_sleep_wariant_b_cykl_zastepuje_koszt_pomiaru(self):
+        cfg = node_cfg()
+        cfg["energy"]["sleep_mode"] = "replace"
+        sent = []
+        n = Node(cfg, send=sent.append)
+        n.state = "SLEEP"
+        n.do_sample()
+        self.assertAlmostEqual(100 - n.battery_level, 0.01, places=6)
+
     def test_sleep_dolicza_koszt_cyklu(self):
         n, _ = make_node()
         n.state = "SLEEP"
@@ -300,8 +309,8 @@ class TestSinkManager(unittest.TestCase):
         e.queue.append(("sample_period_ms", 1000, "t")); m.pump(e, clock())
         clock.advance(0.25)
         m.process(ack("cmd_001", 2), clock())      # timestamp_ns w ACK jest absurdalny - ma być ignorowany
-        met = analyze.command_metrics(self.events(m), 1.0)
-        self.assertAlmostEqual(met["response_ms_mean"], 250.0, places=3)
+        met = analyze.command_metrics(self.events(m))
+        self.assertAlmostEqual(met["response_ms_mean"], 250.0, places=3)      # ms RZECZYWISTE (bez time_scale)
         self.assertEqual(met["success_rate"], 1.0)
 
     def test_error_cofa_wersje_oczekiwana(self):
@@ -453,6 +462,85 @@ class TestSinkManager(unittest.TestCase):
         self.assertEqual(m.counts["malformed"], 2)
         self.assertEqual(m.counts["unknown_node"], 1)
 
+    def test_node_ktory_nigdy_sie_nie_odezwal_jest_unreachable(self):
+        m, clock, sent = make_manager()
+        m.process(status(1, node="node_1"), clock())            # node_2 milczy od początku
+        clock.advance(5.5); m.tick(clock())
+        self.assertEqual(m.entries["node_2"].observed_state, "UNKNOWN")
+        clock.advance(1.0); m.tick(clock())
+        self.assertEqual(m.entries["node_2"].observed_state, wc.UNREACHABLE)
+        ev = [r for r in self.events(m) if r["event_type"] == "NODE_UNREACHABLE" and r["node_id"] == "node_2"]
+        self.assertIn("never_reported", ev[0]["details"])
+
+    def test_zle_typy_pol_nie_zabijaja_sinka(self):
+        m, clock, sent = make_manager()
+        bad = status(1)
+        bad["status_sequence"] = "x"                              # string zamiast liczby
+        m.process(bad, clock())
+        bad2 = status(2); bad2["battery_level"] = True            # bool zamiast liczby
+        m.process(bad2, clock())
+        self.assertEqual(m.counts["malformed"], 2)
+        m.process(status(3), clock())                             # poprawny STATUS nadal działa
+        self.assertEqual(m.entries["node_1"].last_status_seq, 3)
+
+    def test_wyjatek_w_obsludze_nie_zatrzymuje_sinka(self):
+        m, clock, sent = make_manager()
+        m.on_status = lambda *a: 1 / 0
+        m.process(status(1), clock())
+        self.assertEqual(m.counts["handler_errors"], 1)
+        self.assertIn("HANDLER_ERROR", [r["event_type"] for r in self.events(m)])
+
+    def test_status_log_ma_stan_obserwowany_po_aktualizacji(self):
+        m, clock, sent = make_manager()
+        m.process(status(1, "ACTIVE"), clock())
+        m.process(status(2, "FAILED", battery=0.0), clock())
+        m._files["status_log.csv"].flush()
+        rows = read_csv(os.path.join(m.tmp, "status_log.csv"))
+        self.assertEqual([(r["operating_state"], r["observed_state"]) for r in rows],
+                         [("ACTIVE", "ACTIVE"), ("FAILED", "FAILED")])
+
+    def test_zmiana_trybu_samonaprawa_po_utracie_drugiego_polecenia(self):
+        """Tryb = dwa polecenia (stan, potem okres). Gdy drugie przepadnie, kolejny STATUS to wykrywa
+        i sink ponawia brakujący zamiar (nowym command_id)."""
+        m, clock, sent = make_manager("adaptive")
+        m.process(status(1, battery=49.0), clock())
+        first = sent[-1][1]
+        m.process(ack(first["command_id"], 2), clock())          # stan zmieniony
+        second = sent[-1][1]
+        self.assertEqual(second["parameter"], "sample_period_ms")
+        for _ in range(5):                                        # okres: 4 wysłania bez odpowiedzi -> rezygnacja
+            clock.advance(1.1); m.tick(clock())
+        self.assertIsNone(m.entries["node_1"].pending_command_id)
+        n_before = len([s for s in sent if s[1]["type"] == "CONFIG"])
+        m.process(status(2, "DEGRADED", battery=48.0, period=500, version=1), clock())   # node nie dostał okresu
+        again = sent[-1][1]
+        self.assertGreater(len([s for s in sent if s[1]["type"] == "CONFIG"]), n_before)
+        self.assertEqual((again["parameter"], again["value"]), ("sample_period_ms", 1000))
+        self.assertNotEqual(again["command_id"], second["command_id"])
+
+    def test_odtwarzanie_konfiguracji_jest_ograniczone(self):
+        m, clock, sent = make_manager(max_restore_attempts=2)
+        m.process(status(1, version=1), clock())
+        e = m.entries["node_1"]
+        e.queue.append(("sample_period_ms", 1000, "t")); m.pump(e, clock())
+        m.process(ack("cmd_001", 2), clock())
+        seq = 2
+        for _ in range(6):                                        # node ciągle zgłasza starą wersję
+            m.process(status(seq, version=1), clock()); seq += 1
+            e.pending_command_id = None                           # polecenie odtworzenia "przepadło"
+        types = [r["event_type"] for r in self.events(m)]
+        self.assertEqual(types.count("RESTORE_SCHEDULED"), 2)
+        self.assertEqual(types.count("RESTORE_GAVE_UP"), 1)
+
+    def test_stala_wartosc_timeoutu_gdy_adaptacja_wylaczona(self):
+        m, clock, sent = make_manager(adaptive_timeout=False)
+        m.process(status(1), clock())
+        e = m.entries["node_1"]
+        e.queue.append(("status_period_ms", 10000, "t")); m.pump(e, clock())
+        m.process(ack("cmd_001", 2), clock())
+        clock.advance(7); m.tick(clock())
+        self.assertEqual(e.observed_state, wc.UNREACHABLE)        # dokładnie 6 s jak w instrukcji
+
     def test_narzut_zarzadzania(self):
         mg = [{"event_type": e, "timestamp_ns": "1", "node_id": "n", "command_id": "", "details": ""}
               for e in ["STATUS_RECEIVED"] * 3 + ["COMMAND_SENT", "ACK_RECEIVED", "CONFIG_RESTORED", "NODE_UNREACHABLE"]]
@@ -488,48 +576,58 @@ class TestIntegracja(unittest.TestCase):
         import run_experiment
         out = tempfile.mkdtemp()
         try:
-            run_experiment.run("config/sink_test_rdzenia.json", out, duration_s=40)
+            run_experiment.run("config/rdzen/sink.json", out)
             log = read_csv(os.path.join(out, "management_log.csv"))
             by = lambda ev: [r for r in log if r["event_type"] == ev]
             ack1 = [r for r in by("ACK_RECEIVED") if r["command_id"] == "cmd_001"]
             self.assertEqual((ack1[0]["result"], ack1[0]["config_version"]), ("APPLIED", "2"))
             err = [r for r in by("ERROR_RECEIVED") if r["command_id"] == "cmd_002"]
             self.assertEqual(err[0]["result"], "VALUE_OUT_OF_RANGE")
-            self.assertTrue(any("duplicate" in r["details"] for r in by("ACK_RECEIVED")))
+            self.assertTrue(any("duplicate" in r["details"] for r in by("ERROR_RECEIVED")))
             truth = read_json(os.path.join(out, "node_1_truth.json"))
-            self.assertEqual(truth["commands"]["commands_applied"], 2)       # cmd_001 i cmd_003
-            self.assertEqual(truth["commands"]["duplicates_ignored"], 2)     # dwa ponowne wysłania
-            self.assertEqual(truth["config_version"], 3)                     # nie 4 ani 5
+            self.assertEqual(truth["commands"]["commands_applied"], 3)       # cmd_001, cmd_003, cmd_004
+            self.assertEqual(truth["commands"]["duplicates_ignored"], 2)     # cmd_002 i cmd_003 ponownie
+            self.assertEqual(truth["config_version"], 4)                     # stary duplikat cmd_003 nie cofnął wersji
+            table = read_csv(os.path.join(out, "state_table.csv"))
+            row = [r for r in table if r["node_id"] == "node_1"][0]
+            # duplikat cmd_003 (1500) po cmd_004 (2000): gdyby wykonano go ponownie, okres wróciłby do 1500
+            self.assertEqual((row["sample_period_ms"], row["reported_config_version"]), ("2000", "4"))
             for n in ("node_2", "node_3"):                                   # inne nody nietknięte
                 t = read_json(os.path.join(out, f"{n}_truth.json"))
                 self.assertEqual(t["config_version"], 1)
-            table = read_csv(os.path.join(out, "state_table.csv"))
-            self.assertEqual({r["reported_config_version"] for r in table if r["node_id"] == "node_1"}, {"3"})
             data = read_csv(os.path.join(out, "data_log.csv"))
             for n in ("node_1", "node_2", "node_3"):                         # sink odebrał wszystko (localhost)
                 t = read_json(os.path.join(out, f"{n}_truth.json"))
                 self.assertEqual(len([r for r in data if r["node_id"] == n and r["duplicate"] == "0"]),
                                  t["sent_data"])
+            # księgowanie energii: każdy STATUS (także STARTING i STOPPED) i każdy pomiar kosztują
+            t2 = read_json(os.path.join(out, "node_2_truth.json"))
+            expected = 100 - 0.60 * t2["sent_data"] - 0.25 * t2["status_sent"]
+            self.assertAlmostEqual(t2["final_battery"], expected, places=3)
         finally:
             shutil.rmtree(out, ignore_errors=True)
 
     def test_stratny_node_ponowienia_bez_podwojnego_wykonania(self):
-        """Węzeł gubi 40% poleceń i 40% odpowiedzi: sink ponawia TO SAMO command_id, a node
-        wykonuje każde polecenie co najwyżej raz (wersja = 1 + liczba wykonanych)."""
+        """node_1 gubi 40% poleceń i 40% odpowiedzi, node_3 jest głuchy: sink ponawia TO SAMO command_id,
+        node wykonuje każde polecenie co najwyżej raz, a głuchy node kończy na GAVE_UP."""
         import run_experiment
         out = tempfile.mkdtemp()
         try:
-            run_experiment.run("config/sink_test_strat.json", out, node_cfgs=[
-                "config/node_1_stratny.json", "config/node_2.json", "config/node_3.json"])
+            run_experiment.run("config/strat/sink.json", out)
             log = read_csv(os.path.join(out, "management_log.csv"))
             self.assertGreater(len([r for r in log if r["event_type"] == "COMMAND_TIMEOUT"]), 0)
-            sent = [r for r in log if r["event_type"] == "COMMAND_SENT" and r["command_id"]]
-            retried = {r["command_id"] for r in sent if r["details"].startswith("retry=")}
-            self.assertTrue(retried)                                   # były ponowienia tego samego id
+            sent = [r for r in log if r["event_type"] == "COMMAND_SENT" and r["command_id"]
+                    and r["node_id"] == "node_1"]
+            self.assertTrue({r["command_id"] for r in sent if r["details"].startswith("retry=")})
             t = read_json(os.path.join(out, "node_1_truth.json"))
             self.assertEqual(t["config_version"], 1 + t["commands"]["commands_applied"])
             self.assertLessEqual(t["commands"]["commands_applied"], len({r["command_id"] for r in sent}))
-            self.assertGreater(t["commands"]["duplicates_ignored"], 0)  # ponowienia po zgubionym ACK
+            self.assertGreater(t["commands"]["duplicates_ignored"], 0)
+            # głuchy node_3: rezygnacja po ponowieniach, ograniczone odtwarzanie, wersja bez zmian
+            gave = [r for r in log if r["node_id"] == "node_3" and r["result"] == "GAVE_UP"]
+            self.assertTrue(any(r["event_type"] == "COMMAND_TIMEOUT" for r in gave))
+            self.assertTrue(any(r["event_type"] == "RESTORE_GAVE_UP" for r in gave))
+            self.assertEqual(read_json(os.path.join(out, "node_3_truth.json"))["config_version"], 1)
         finally:
             shutil.rmtree(out, ignore_errors=True)
 

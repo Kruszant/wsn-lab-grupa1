@@ -1,0 +1,29 @@
+{
+  "node_id": "node_3",
+  "port": 6103,
+  "sink_port": 6000,
+  "time_scale": 10,
+  "duration_s": 200,
+  "seed": 103,
+  "output_dir": "wyniki/domyslny",
+  "sample_period_ms": 500,
+  "status_period_ms": 2000,
+  "startup_ms": 1000,
+  "unit": "degC",
+  "signal": {
+    "base": 26,
+    "amplitude": 3.0,
+    "period_s": 60,
+    "noise_std": 0.2
+  },
+  "energy": {
+    "initial": 100.0,
+    "generate": 0.1,
+    "send_data": 0.5,
+    "send_status": 0.25,
+    "receive_command": 0.1,
+    "sleep_cycle": 0.01,
+    "low_battery_threshold": 20.0,
+    "sleep_mode": "replace"
+  }
+}

@@ -1,6 +1,6 @@
 {
-  "start_ns": 2762102040923583,
-  "end_ns": 2762106348233125,
+  "start_ns": 2764219068070041,
+  "end_ns": 2764223386899416,
   "time_scale": 10.0,
   "duration_s": 40.0,
   "strategy": "none",
@@ -11,12 +11,12 @@
   ],
   "counts": {
     "sent": {
-      "CONFIG": 5
+      "CONFIG": 6
     },
     "received": {
       "STATUS": 66,
-      "DATA": 203,
-      "ACK": 3,
+      "DATA": 195,
+      "ACK": 4,
       "ERROR": 2
     },
     "malformed": 0,
