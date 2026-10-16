@@ -1,0 +1,236 @@
+{
+  "full": {
+    "strategy": "adaptive",
+    "window_s": 200.0,
+    "nodes": {
+      "node_1": {
+        "final_battery": 0.0,
+        "generated": 137,
+        "received": 137,
+        "mode_changes": 2,
+        "time_active_s": 38.028999999999996,
+        "time_degraded_s": 39.50000000000001,
+        "time_sleep_s": 58.48999999999998,
+        "time_failed_s": 62.97900000000001,
+        "time_to_critical_s": 78.52,
+        "lifetime_s": 137.021,
+        "availability": 0.6799827125000002,
+        "mismatch_ms": 29.1,
+        "detection": {
+          "silence_ms": 6083.0,
+          "unreachable_at_s": 143.10894958,
+          "failed_at_s": 137.021,
+          "from_failed_s": 6.087949580000014
+        },
+        "commands": {
+          "commands_received": 4,
+          "commands_applied": 4,
+          "commands_rejected": 0,
+          "duplicates_ignored": 0,
+          "test_dropped_commands": 0,
+          "test_dropped_replies": 0
+        }
+      },
+      "node_2": {
+        "final_battery": 0.0,
+        "generated": 137,
+        "received": 137,
+        "mode_changes": 2,
+        "time_active_s": 38.028999999999996,
+        "time_degraded_s": 39.504000000000005,
+        "time_sleep_s": 58.484999999999985,
+        "time_failed_s": 62.97900000000001,
+        "time_to_critical_s": 78.52,
+        "lifetime_s": 137.021,
+        "availability": 0.67996969585,
+        "mismatch_ms": 27.6,
+        "detection": {
+          "silence_ms": 6085.0,
+          "unreachable_at_s": 143.10894958,
+          "failed_at_s": 137.021,
+          "from_failed_s": 6.087949580000014
+        },
+        "commands": {
+          "commands_received": 4,
+          "commands_applied": 4,
+          "commands_rejected": 0,
+          "duplicates_ignored": 0,
+          "test_dropped_commands": 0,
+          "test_dropped_replies": 0
+        }
+      },
+      "node_3": {
+        "final_battery": 0.0,
+        "generated": 137,
+        "received": 137,
+        "mode_changes": 2,
+        "time_active_s": 38.021,
+        "time_degraded_s": 39.516000000000005,
+        "time_sleep_s": 58.481999999999985,
+        "time_failed_s": 62.97800000000001,
+        "time_to_critical_s": 78.52,
+        "lifetime_s": 137.022,
+        "availability": 0.6799838167000002,
+        "mismatch_ms": 26.400000000000002,
+        "detection": {
+          "silence_ms": 6082.0,
+          "unreachable_at_s": 143.10894958,
+          "failed_at_s": 137.022,
+          "from_failed_s": 6.0869495800000095
+        },
+        "commands": {
+          "commands_received": 4,
+          "commands_applied": 4,
+          "commands_rejected": 0,
+          "duplicates_ignored": 0,
+          "test_dropped_commands": 0,
+          "test_dropped_replies": 0
+        }
+      }
+    },
+    "commands": {
+      "commands_sent": 12,
+      "commands_acked": 12,
+      "commands_error": 0,
+      "success_rate": 1.0,
+      "response_ms_mean": 6.9290975,
+      "response_ms_median": 6.165625,
+      "response_ms_max": 12.300419999999999
+    },
+    "overhead": {
+      "management_packets": 237,
+      "data_packets": 411,
+      "overhead": 0.36574074074074076
+    },
+    "counts": {
+      "sent": {
+        "CONFIG": 12
+      },
+      "received": {
+        "STATUS": 210,
+        "DATA": 411,
+        "ACK": 12,
+        "ALERT": 3
+      },
+      "malformed": 0,
+      "unknown_node": 0
+    }
+  },
+  "window": {
+    "strategy": "adaptive",
+    "window_s": 100.0,
+    "nodes": {
+      "node_1": {
+        "final_battery": 12.63,
+        "generated": 124,
+        "received": 124,
+        "mode_changes": 2,
+        "time_active_s": 38.028999999999996,
+        "time_degraded_s": 39.50000000000001,
+        "time_sleep_s": 21.468999999999994,
+        "time_failed_s": 0.0,
+        "time_to_critical_s": 78.52,
+        "lifetime_s": null,
+        "availability": 0.9897044708,
+        "mismatch_ms": 29.1,
+        "detection": {
+          "silence_ms": 6083.0,
+          "unreachable_at_s": 143.10894958,
+          "failed_at_s": 137.021,
+          "from_failed_s": 6.087949580000014
+        },
+        "commands": {
+          "commands_received": 4,
+          "commands_applied": 4,
+          "commands_rejected": 0,
+          "duplicates_ignored": 0,
+          "test_dropped_commands": 0,
+          "test_dropped_replies": 0
+        }
+      },
+      "node_2": {
+        "final_battery": 12.63,
+        "generated": 124,
+        "received": 124,
+        "mode_changes": 2,
+        "time_active_s": 38.028999999999996,
+        "time_degraded_s": 39.504000000000005,
+        "time_sleep_s": 21.464,
+        "time_failed_s": 0.0,
+        "time_to_critical_s": 78.52,
+        "lifetime_s": null,
+        "availability": 0.9896997167000001,
+        "mismatch_ms": 27.6,
+        "detection": {
+          "silence_ms": 6085.0,
+          "unreachable_at_s": 143.10894958,
+          "failed_at_s": 137.021,
+          "from_failed_s": 6.087949580000014
+        },
+        "commands": {
+          "commands_received": 4,
+          "commands_applied": 4,
+          "commands_rejected": 0,
+          "duplicates_ignored": 0,
+          "test_dropped_commands": 0,
+          "test_dropped_replies": 0
+        }
+      },
+      "node_3": {
+        "final_battery": 12.63,
+        "generated": 124,
+        "received": 124,
+        "mode_changes": 2,
+        "time_active_s": 38.021,
+        "time_degraded_s": 39.516000000000005,
+        "time_sleep_s": 21.459999999999994,
+        "time_failed_s": 0.0,
+        "time_to_critical_s": 78.52,
+        "lifetime_s": null,
+        "availability": 0.9896963542,
+        "mismatch_ms": 26.400000000000002,
+        "detection": {
+          "silence_ms": 6082.0,
+          "unreachable_at_s": 143.10894958,
+          "failed_at_s": 137.022,
+          "from_failed_s": 6.0869495800000095
+        },
+        "commands": {
+          "commands_received": 4,
+          "commands_applied": 4,
+          "commands_rejected": 0,
+          "duplicates_ignored": 0,
+          "test_dropped_commands": 0,
+          "test_dropped_replies": 0
+        }
+      }
+    },
+    "commands": {
+      "commands_sent": 12,
+      "commands_acked": 12,
+      "commands_error": 0,
+      "success_rate": 1.0,
+      "response_ms_mean": 6.9290975,
+      "response_ms_median": 6.165625,
+      "response_ms_max": 12.300419999999999
+    },
+    "overhead": {
+      "management_packets": 180,
+      "data_packets": 372,
+      "overhead": 0.32608695652173914
+    },
+    "counts": {
+      "sent": {
+        "CONFIG": 12
+      },
+      "received": {
+        "STATUS": 210,
+        "DATA": 411,
+        "ACK": 12,
+        "ALERT": 3
+      },
+      "malformed": 0,
+      "unknown_node": 0
+    }
+  }
+}

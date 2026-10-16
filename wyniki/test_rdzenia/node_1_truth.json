@@ -1,0 +1,29 @@
+{
+  "node_id": "node_1",
+  "final_state": "STOPPED",
+  "final_battery": 66.3,
+  "generated": 47,
+  "sent_data": 47,
+  "status_sent": 22,
+  "config_version": 3,
+  "time_to_critical_s": null,
+  "state_time_s": {
+    "STARTING": 1.003,
+    "ACTIVE": 39.01,
+    "DEGRADED": 0.0,
+    "SLEEP": 0.0,
+    "FAILED": 0.0,
+    "STOPPED": 0.003
+  },
+  "mode_changes": [],
+  "mode_change_count": 0,
+  "time_scale": 10.0,
+  "commands": {
+    "commands_received": 5,
+    "commands_applied": 2,
+    "commands_rejected": 1,
+    "duplicates_ignored": 2,
+    "test_dropped_commands": 0,
+    "test_dropped_replies": 0
+  }
+}

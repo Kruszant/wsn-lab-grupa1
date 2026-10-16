@@ -1,0 +1,26 @@
+{
+  "start_ns": 2760653185085791,
+  "end_ns": 2760673505620416,
+  "time_scale": 10.0,
+  "duration_s": 200.0,
+  "strategy": "adaptive",
+  "nodes": [
+    "node_1",
+    "node_2",
+    "node_3"
+  ],
+  "counts": {
+    "sent": {
+      "CONFIG": 15
+    },
+    "received": {
+      "STATUS": 165,
+      "DATA": 432,
+      "ACK": 15,
+      "ALERT": 3
+    },
+    "malformed": 0,
+    "unknown_node": 0
+  },
+  "status_timeout_ms": 6000
+}

@@ -1,0 +1,40 @@
+{
+  "node_id": "node_3",
+  "final_state": "FAILED",
+  "final_battery": 0.0,
+  "generated": 137,
+  "sent_data": 137,
+  "status_sent": 70,
+  "config_version": 5,
+  "time_to_critical_s": 78.529,
+  "state_time_s": {
+    "STARTING": 1.021,
+    "ACTIVE": 38.007,
+    "DEGRADED": 39.509,
+    "SLEEP": 58.506,
+    "FAILED": 62.981,
+    "STOPPED": 0.0
+  },
+  "mode_changes": [
+    {
+      "t_s": 39.027,
+      "from": "ACTIVE",
+      "to": "DEGRADED"
+    },
+    {
+      "t_s": 78.536,
+      "from": "DEGRADED",
+      "to": "SLEEP"
+    }
+  ],
+  "mode_change_count": 2,
+  "time_scale": 10.0,
+  "commands": {
+    "commands_received": 4,
+    "commands_applied": 4,
+    "commands_rejected": 0,
+    "duplicates_ignored": 0,
+    "test_dropped_commands": 0,
+    "test_dropped_replies": 0
+  }
+}

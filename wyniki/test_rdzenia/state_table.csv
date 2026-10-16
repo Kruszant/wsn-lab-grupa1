@@ -1,0 +1,4 @@
+node_id,observed_state,reported_state,last_status_ns,battery_level,sample_period_ms,expected_config_version,reported_config_version,pending_command_id
+node_1,STOPPED,STOPPED,2760853724941333,66.3,1000,3,3,
+node_2,STOPPED,STOPPED,2760853724840416,48.2,500,1,1,
+node_3,STOPPED,STOPPED,2760853724634500,48.2,500,1,1,

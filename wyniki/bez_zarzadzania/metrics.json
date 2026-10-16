@@ -1,0 +1,230 @@
+{
+  "full": {
+    "strategy": "none",
+    "window_s": 200.0,
+    "nodes": {
+      "node_1": {
+        "final_battery": 0.0,
+        "generated": 151,
+        "received": 151,
+        "mode_changes": 0,
+        "time_active_s": 75.027,
+        "time_degraded_s": 0.0,
+        "time_sleep_s": 0.0,
+        "time_failed_s": 123.949,
+        "time_to_critical_s": 61.034,
+        "lifetime_s": 76.051,
+        "availability": 0.37500971250000004,
+        "mismatch_ms": 0.0,
+        "detection": {
+          "silence_ms": 6069.0,
+          "unreachable_at_s": 82.11949875,
+          "failed_at_s": 76.051,
+          "from_failed_s": 6.068498750000003
+        },
+        "commands": {
+          "commands_received": 0,
+          "commands_applied": 0,
+          "commands_rejected": 0,
+          "duplicates_ignored": 0,
+          "test_dropped_commands": 0,
+          "test_dropped_replies": 0
+        }
+      },
+      "node_2": {
+        "final_battery": 0.0,
+        "generated": 151,
+        "received": 151,
+        "mode_changes": 0,
+        "time_active_s": 75.009,
+        "time_degraded_s": 0.0,
+        "time_sleep_s": 0.0,
+        "time_failed_s": 123.971,
+        "time_to_critical_s": 61.026,
+        "lifetime_s": 76.029,
+        "availability": 0.37490773330000005,
+        "mismatch_ms": 0.0,
+        "detection": {
+          "silence_ms": 6090.0,
+          "unreachable_at_s": 82.11949875,
+          "failed_at_s": 76.029,
+          "from_failed_s": 6.090498750000009
+        },
+        "commands": {
+          "commands_received": 0,
+          "commands_applied": 0,
+          "commands_rejected": 0,
+          "duplicates_ignored": 0,
+          "test_dropped_commands": 0,
+          "test_dropped_replies": 0
+        }
+      },
+      "node_3": {
+        "final_battery": 0.0,
+        "generated": 151,
+        "received": 151,
+        "mode_changes": 0,
+        "time_active_s": 75.022,
+        "time_degraded_s": 0.0,
+        "time_sleep_s": 0.0,
+        "time_failed_s": 123.957,
+        "time_to_critical_s": 61.027,
+        "lifetime_s": 76.043,
+        "availability": 0.37497893540000005,
+        "mismatch_ms": 0.0,
+        "detection": {
+          "silence_ms": 6076.0,
+          "unreachable_at_s": 82.11949875,
+          "failed_at_s": 76.043,
+          "from_failed_s": 6.076498749999999
+        },
+        "commands": {
+          "commands_received": 0,
+          "commands_applied": 0,
+          "commands_rejected": 0,
+          "duplicates_ignored": 0,
+          "test_dropped_commands": 0,
+          "test_dropped_replies": 0
+        }
+      }
+    },
+    "commands": {
+      "commands_sent": 0,
+      "commands_acked": 0,
+      "commands_error": 0,
+      "success_rate": null,
+      "response_ms_mean": null,
+      "response_ms_median": null,
+      "response_ms_max": null
+    },
+    "overhead": {
+      "management_packets": 123,
+      "data_packets": 453,
+      "overhead": 0.21354166666666666
+    },
+    "counts": {
+      "sent": {},
+      "received": {
+        "STATUS": 120,
+        "DATA": 453,
+        "ALERT": 3
+      },
+      "malformed": 0,
+      "unknown_node": 0
+    }
+  },
+  "window": {
+    "strategy": "none",
+    "window_s": 100.0,
+    "nodes": {
+      "node_1": {
+        "final_battery": 0.0,
+        "generated": 151,
+        "received": 151,
+        "mode_changes": 0,
+        "time_active_s": 75.027,
+        "time_degraded_s": 0.0,
+        "time_sleep_s": 0.0,
+        "time_failed_s": 23.948999999999998,
+        "time_to_critical_s": 61.034,
+        "lifetime_s": 76.051,
+        "availability": 0.7500194250000001,
+        "mismatch_ms": 0.0,
+        "detection": {
+          "silence_ms": 6069.0,
+          "unreachable_at_s": 82.11949875,
+          "failed_at_s": 76.051,
+          "from_failed_s": 6.068498750000003
+        },
+        "commands": {
+          "commands_received": 0,
+          "commands_applied": 0,
+          "commands_rejected": 0,
+          "duplicates_ignored": 0,
+          "test_dropped_commands": 0,
+          "test_dropped_replies": 0
+        }
+      },
+      "node_2": {
+        "final_battery": 0.0,
+        "generated": 151,
+        "received": 151,
+        "mode_changes": 0,
+        "time_active_s": 75.009,
+        "time_degraded_s": 0.0,
+        "time_sleep_s": 0.0,
+        "time_failed_s": 23.971000000000004,
+        "time_to_critical_s": 61.026,
+        "lifetime_s": 76.029,
+        "availability": 0.7498154666000001,
+        "mismatch_ms": 0.0,
+        "detection": {
+          "silence_ms": 6090.0,
+          "unreachable_at_s": 82.11949875,
+          "failed_at_s": 76.029,
+          "from_failed_s": 6.090498750000009
+        },
+        "commands": {
+          "commands_received": 0,
+          "commands_applied": 0,
+          "commands_rejected": 0,
+          "duplicates_ignored": 0,
+          "test_dropped_commands": 0,
+          "test_dropped_replies": 0
+        }
+      },
+      "node_3": {
+        "final_battery": 0.0,
+        "generated": 151,
+        "received": 151,
+        "mode_changes": 0,
+        "time_active_s": 75.022,
+        "time_degraded_s": 0.0,
+        "time_sleep_s": 0.0,
+        "time_failed_s": 23.956999999999994,
+        "time_to_critical_s": 61.027,
+        "lifetime_s": 76.043,
+        "availability": 0.7499578708000001,
+        "mismatch_ms": 0.0,
+        "detection": {
+          "silence_ms": 6076.0,
+          "unreachable_at_s": 82.11949875,
+          "failed_at_s": 76.043,
+          "from_failed_s": 6.076498749999999
+        },
+        "commands": {
+          "commands_received": 0,
+          "commands_applied": 0,
+          "commands_rejected": 0,
+          "duplicates_ignored": 0,
+          "test_dropped_commands": 0,
+          "test_dropped_replies": 0
+        }
+      }
+    },
+    "commands": {
+      "commands_sent": 0,
+      "commands_acked": 0,
+      "commands_error": 0,
+      "success_rate": null,
+      "response_ms_mean": null,
+      "response_ms_median": null,
+      "response_ms_max": null
+    },
+    "overhead": {
+      "management_packets": 123,
+      "data_packets": 453,
+      "overhead": 0.21354166666666666
+    },
+    "counts": {
+      "sent": {},
+      "received": {
+        "STATUS": 120,
+        "DATA": 453,
+        "ALERT": 3
+      },
+      "malformed": 0,
+      "unknown_node": 0
+    }
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "port": 6000,
+  "node_ports": {
+    "node_1": 6101,
+    "node_2": 6102,
+    "node_3": 6103
+  },
+  "time_scale": 10,
+  "duration_s": 120,
+  "output_dir": "wyniki/domyslny",
+  "status_timeout_ms": 6000,
+  "default_status_period_ms": 2000,
+  "command_timeout_ms": 1000,
+  "max_retries": 3,
+  "table_print_s": 0,
+  "strategy": {
+    "mode": "adaptive",
+    "degraded_below": 50.0,
+    "sleep_below": 20.0,
+    "periods_ms": {
+      "ACTIVE": 500,
+      "DEGRADED": 1000,
+      "SLEEP": 3000
+    },
+    "sleep_status_period_ms": 6000
+  }
+}
