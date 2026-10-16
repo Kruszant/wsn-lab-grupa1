@@ -7,8 +7,11 @@ import csv
 import json
 import os
 import shutil
+import sys
 import tempfile
 import unittest
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))   # działa z dowolnego katalogu roboczego
 
 import analyze
 import wsn_common as wc

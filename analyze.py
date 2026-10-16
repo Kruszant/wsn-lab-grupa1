@@ -22,9 +22,13 @@ import json
 import os
 import statistics
 
-import matplotlib
-matplotlib.use("Agg")                      # zapis do pliku, bez okna
-import matplotlib.pyplot as plt
+
+def _pyplot():
+    """matplotlib ładujemy dopiero przy rysowaniu - metryki i testy działają bez niego."""
+    import matplotlib
+    matplotlib.use("Agg")                  # zapis do pliku, bez okna
+    import matplotlib.pyplot as plt
+    return plt
 
 MGMT_EVENTS = ("COMMAND_SENT", "STATUS_RECEIVED", "ALERT_RECEIVED", "ACK_RECEIVED", "ERROR_RECEIVED")
 AVAILABLE_STATES = ("ACTIVE", "DEGRADED", "SLEEP")
@@ -226,6 +230,7 @@ HEADER = ("| Strategia | Energia końcowa | Pomiary odebrane | Pomiary wygenerow
 
 
 def plot_battery(runs, labels, path):
+    plt = _pyplot()
     fig, ax = plt.subplots(figsize=(9, 5))
     colors = ["#d62728", "#1f77b4", "#2ca02c", "#9467bd", "#ff7f0e"]
     for i, (run, label) in enumerate(zip(runs, labels)):
@@ -251,6 +256,7 @@ def plot_battery(runs, labels, path):
 
 
 def plot_period(run, path, reference=None):
+    plt = _pyplot()
     fig, ax = plt.subplots(figsize=(9, 4.5))
     failed_marked = False
     for j, n in enumerate(run["meta"]["nodes"]):

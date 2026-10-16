@@ -118,7 +118,7 @@
   },
   "window": {
     "strategy": "adaptive",
-    "window_s": 100.0,
+    "window_s": 100,
     "nodes": {
       "node_1": {
         "final_battery": 12.63,

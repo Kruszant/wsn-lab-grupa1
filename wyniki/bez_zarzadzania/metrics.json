@@ -115,7 +115,7 @@
   },
   "window": {
     "strategy": "none",
-    "window_s": 100.0,
+    "window_s": 100,
     "nodes": {
       "node_1": {
         "final_battery": 0.0,
