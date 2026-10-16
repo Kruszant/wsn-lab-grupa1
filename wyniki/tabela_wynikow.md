@@ -50,12 +50,12 @@
 | Adaptacyjna + priorytet node_1 | node_1 | 108.5 | 114.7 | 6163 | 6.2 | 0 |
 | Adaptacyjna + priorytet node_1 | node_2 | 136.5 | 142.6 | 6104 | 6.1 | 0 |
 | Adaptacyjna + priorytet node_1 | node_3 | 136.5 | 142.6 | 6103 | 6.1 | 0 |
-| Bez zarządzania, STATUS 1 s | node_1 | 69.5 | 75.6 | 6082 | 6.1 | 0 |
-| Bez zarządzania, STATUS 1 s | node_2 | 69.5 | 75.6 | 6080 | 6.1 | 0 |
-| Bez zarządzania, STATUS 1 s | node_3 | 69.5 | 75.6 | 6059 | 6.1 | 0 |
-| Bez zarządzania, STATUS 4 s | node_1 | 79.5 | 85.6 | 6086 | 6.1 | 0 |
-| Bez zarządzania, STATUS 4 s | node_2 | 79.5 | 85.6 | 6099 | 6.1 | 0 |
-| Bez zarządzania, STATUS 4 s | node_3 | 79.5 | 85.6 | 6076 | 6.1 | 0 |
+| Bez zarządzania, STATUS 1 s | node_1 | 69.5 | 75.6 | 6065 | 6.1 | 0 |
+| Bez zarządzania, STATUS 1 s | node_2 | 69.5 | 75.6 | 6063 | 6.1 | 0 |
+| Bez zarządzania, STATUS 1 s | node_3 | 69.5 | 75.6 | 6064 | 6.1 | 0 |
+| Bez zarządzania, STATUS 4 s | node_1 | 79.5 | 91.6 | 12123 | 12.1 | 0 |
+| Bez zarządzania, STATUS 4 s | node_2 | 79.5 | 91.6 | 12125 | 12.1 | 0 |
+| Bez zarządzania, STATUS 4 s | node_3 | 79.5 | 91.6 | 12124 | 12.1 | 0 |
 
 ### E. Per node (cały eksperyment)
 

@@ -55,12 +55,16 @@ i podawane w **ms rzeczywistych** (opóźnienie UDP nie zależy od przyspieszeni
 | `config/node_{1,2,3}.json`, `config/sink_*.json` | konfiguracje eksperymentów głównych (200 s, `time_scale` 10) |
 | `config/rdzen/`, `config/strat/` | konfiguracje testów: wspólny rdzeń (40 s) i ścieżka ze stratami (80 s) |
 | `config/wariant_B/` | wariant kosztu SLEEP do analizy wrażliwości |
+| `config/status_1s/`, `config/status_4s/` | nody z `status_period_ms` = 1000 i 4000 (+ sink) do bezpośredniego testu wpływu okresu STATUS (pytanie 3) |
 | `wyniki/<przebieg>/` | `management_log.csv`, `status_log.csv`, `data_log.csv`, `state_table.csv`, `run_meta.json`, `<node>_truth.json`, `<node>_energy_trace.csv`, `metrics.json` |
 | `wyniki/tabela_wynikow.md`, `wyniki/wykres_*.png`, `wyniki/mutacje.txt` | wyniki zbiorcze |
 
 Każdy plik `config/sink_*.json` zawiera `node_configs` (które trzy nody uruchamia `run_experiment.py`) oraz parametry
 eksperymentu (`duration_s`, `time_scale`, progi, okresy, scenariusz); parametry nodów (energia, okresy, sygnał) są w
-`config/node_*.json`. Nic z eksperymentów nie jest „ukryte” we flagach.
+`config/node_*.json`. Każdy przebieg z tabel ma własny plik konfiguracji sinka i trzy pliki nodów (także STATUS co 1 s
+i co 4 s: `config/status_1s/`, `config/status_4s/`). `run_experiment.py` i `run_all.py` przekazują procesom wyłącznie
+wartości z tych plików (`time_scale`, `duration_s`, folder wyników); pozostałe flagi (`--status-period-ms`, `--grace-s`
+itp.) służą tylko do ręcznych prób i żaden przebieg z tabel z nich nie korzysta.
 
 ## 3. Kontrakt komunikatów
 
@@ -268,12 +272,12 @@ porównanie opiera się na **czasie życia** i liczbie pomiarów:
 | Adaptacyjna + priorytet node_1 | node_1 | 108.5 | 114.7 | 6163 | 6.2 | 0 |
 | Adaptacyjna + priorytet node_1 | node_2 | 136.5 | 142.6 | 6104 | 6.1 | 0 |
 | Adaptacyjna + priorytet node_1 | node_3 | 136.5 | 142.6 | 6103 | 6.1 | 0 |
-| Bez zarządzania, STATUS 1 s | node_1 | 69.5 | 75.6 | 6082 | 6.1 | 0 |
-| Bez zarządzania, STATUS 1 s | node_2 | 69.5 | 75.6 | 6080 | 6.1 | 0 |
-| Bez zarządzania, STATUS 1 s | node_3 | 69.5 | 75.6 | 6059 | 6.1 | 0 |
-| Bez zarządzania, STATUS 4 s | node_1 | 79.5 | 85.6 | 6086 | 6.1 | 0 |
-| Bez zarządzania, STATUS 4 s | node_2 | 79.5 | 85.6 | 6099 | 6.1 | 0 |
-| Bez zarządzania, STATUS 4 s | node_3 | 79.5 | 85.6 | 6076 | 6.1 | 0 |
+| Bez zarządzania, STATUS 1 s | node_1 | 69.5 | 75.6 | 6065 | 6.1 | 0 |
+| Bez zarządzania, STATUS 1 s | node_2 | 69.5 | 75.6 | 6063 | 6.1 | 0 |
+| Bez zarządzania, STATUS 1 s | node_3 | 69.5 | 75.6 | 6064 | 6.1 | 0 |
+| Bez zarządzania, STATUS 4 s | node_1 | 79.5 | 91.6 | 12123 | 12.1 | 0 |
+| Bez zarządzania, STATUS 4 s | node_2 | 79.5 | 91.6 | 12125 | 12.1 | 0 |
+| Bez zarządzania, STATUS 4 s | node_3 | 79.5 | 91.6 | 12124 | 12.1 | 0 |
 
 ### Powtórzenia i rozrzut
 

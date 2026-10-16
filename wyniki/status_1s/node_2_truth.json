@@ -6,13 +6,13 @@
   "sent_data": 138,
   "status_sent": 71,
   "config_version": 1,
-  "time_to_critical_s": 55.504,
+  "time_to_critical_s": 55.53,
   "state_time_s": {
-    "STARTING": 1.003,
-    "ACTIVE": 68.516,
+    "STARTING": 1.023,
+    "ACTIVE": 68.518,
     "DEGRADED": 0.0,
     "SLEEP": 0.0,
-    "FAILED": 130.498,
+    "FAILED": 130.469,
     "STOPPED": 0.0
   },
   "mode_changes": [],
