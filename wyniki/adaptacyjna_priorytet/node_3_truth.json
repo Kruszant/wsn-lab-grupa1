@@ -6,23 +6,23 @@
   "sent_data": 137,
   "status_sent": 70,
   "config_version": 5,
-  "time_to_critical_s": 78.529,
+  "time_to_critical_s": 78.528,
   "state_time_s": {
-    "STARTING": 1.021,
-    "ACTIVE": 38.007,
-    "DEGRADED": 39.509,
-    "SLEEP": 58.506,
-    "FAILED": 62.981,
+    "STARTING": 1.022,
+    "ACTIVE": 38.023,
+    "DEGRADED": 39.505,
+    "SLEEP": 58.489,
+    "FAILED": 62.986,
     "STOPPED": 0.0
   },
   "mode_changes": [
     {
-      "t_s": 39.027,
+      "t_s": 39.044,
       "from": "ACTIVE",
       "to": "DEGRADED"
     },
     {
-      "t_s": 78.536,
+      "t_s": 78.549,
       "from": "DEGRADED",
       "to": "SLEEP"
     }

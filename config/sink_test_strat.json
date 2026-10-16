@@ -1,0 +1,76 @@
+{
+  "port": 6000,
+  "node_ports": {
+    "node_1": 6101,
+    "node_2": 6102,
+    "node_3": 6103
+  },
+  "time_scale": 10,
+  "duration_s": 80,
+  "output_dir": "wyniki/domyslny",
+  "status_timeout_ms": 6000,
+  "default_status_period_ms": 2000,
+  "command_timeout_ms": 1000,
+  "max_retries": 3,
+  "table_print_s": 2,
+  "strategy": {
+    "mode": "none",
+    "degraded_below": 50.0,
+    "sleep_below": 20.0,
+    "periods_ms": {
+      "ACTIVE": 500,
+      "DEGRADED": 1000,
+      "SLEEP": 3000
+    }
+  },
+  "scenario": [
+    {
+      "at_s": 6,
+      "node": "node_1",
+      "parameter": "sample_period_ms",
+      "value": 600
+    },
+    {
+      "at_s": 14,
+      "node": "node_1",
+      "parameter": "sample_period_ms",
+      "value": 700
+    },
+    {
+      "at_s": 22,
+      "node": "node_1",
+      "parameter": "sample_period_ms",
+      "value": 800
+    },
+    {
+      "at_s": 30,
+      "node": "node_1",
+      "parameter": "sample_period_ms",
+      "value": 900
+    },
+    {
+      "at_s": 38,
+      "node": "node_1",
+      "parameter": "sample_period_ms",
+      "value": 1000
+    },
+    {
+      "at_s": 46,
+      "node": "node_1",
+      "parameter": "sample_period_ms",
+      "value": 1100
+    },
+    {
+      "at_s": 54,
+      "node": "node_1",
+      "parameter": "sample_period_ms",
+      "value": 1200
+    },
+    {
+      "at_s": 62,
+      "node": "node_1",
+      "parameter": "sample_period_ms",
+      "value": 1300
+    }
+  ]
+}

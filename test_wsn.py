@@ -513,6 +513,26 @@ class TestIntegracja(unittest.TestCase):
         finally:
             shutil.rmtree(out, ignore_errors=True)
 
+    def test_stratny_node_ponowienia_bez_podwojnego_wykonania(self):
+        """Węzeł gubi 40% poleceń i 40% odpowiedzi: sink ponawia TO SAMO command_id, a node
+        wykonuje każde polecenie co najwyżej raz (wersja = 1 + liczba wykonanych)."""
+        import run_experiment
+        out = tempfile.mkdtemp()
+        try:
+            run_experiment.run("config/sink_test_strat.json", out, node_cfgs=[
+                "config/node_1_stratny.json", "config/node_2.json", "config/node_3.json"])
+            log = read_csv(os.path.join(out, "management_log.csv"))
+            self.assertGreater(len([r for r in log if r["event_type"] == "COMMAND_TIMEOUT"]), 0)
+            sent = [r for r in log if r["event_type"] == "COMMAND_SENT" and r["command_id"]]
+            retried = {r["command_id"] for r in sent if r["details"].startswith("retry=")}
+            self.assertTrue(retried)                                   # były ponowienia tego samego id
+            t = read_json(os.path.join(out, "node_1_truth.json"))
+            self.assertEqual(t["config_version"], 1 + t["commands"]["commands_applied"])
+            self.assertLessEqual(t["commands"]["commands_applied"], len({r["command_id"] for r in sent}))
+            self.assertGreater(t["commands"]["duplicates_ignored"], 0)  # ponowienia po zgubionym ACK
+        finally:
+            shutil.rmtree(out, ignore_errors=True)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

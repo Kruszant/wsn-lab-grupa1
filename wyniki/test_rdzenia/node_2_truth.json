@@ -8,12 +8,12 @@
   "config_version": 1,
   "time_to_critical_s": null,
   "state_time_s": {
-    "STARTING": 1.02,
-    "ACTIVE": 38.992,
+    "STARTING": 1.025,
+    "ACTIVE": 38.989,
     "DEGRADED": 0.0,
     "SLEEP": 0.0,
     "FAILED": 0.0,
-    "STOPPED": 0.003
+    "STOPPED": 0.002
   },
   "mode_changes": [],
   "mode_change_count": 0,

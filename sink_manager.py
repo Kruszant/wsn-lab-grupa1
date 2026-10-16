@@ -236,7 +236,7 @@ class Manager:
         elif p == "status_period_ms":
             e.status_period_ms = v
         e.reported_config_version = m["config_version"]
-        self._check_config(e, now)
+        self._check_config(e, now, cause="ack_received")
         self.pump(e, now)
         self.decide(e, now)
 
@@ -284,7 +284,7 @@ class Manager:
             e.mismatch_open = False
             self._log(now, "CONFIG_RESTORED", e.node_id, "", "config_version", "",
                       e.reported_config_version, e.reported_config_version, "",
-                      f"cause={cause or 'ack_received'};duration_ms="
+                      f"cause={cause or 'version_reported_by_node'};duration_ms="
                       f"{self.sim.sim_ms(now - e.mismatch_start):.1f}")
         # niespójność bez żadnego polecenia w locie => odtwórz ostatni zamiar
         if (mismatch and e.pending_command_id is None and not e.queue and e.last_intent

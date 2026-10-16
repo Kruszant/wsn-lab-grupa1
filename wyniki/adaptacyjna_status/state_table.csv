@@ -1,4 +1,4 @@
 node_id,observed_state,reported_state,last_status_ns,battery_level,sample_period_ms,expected_config_version,reported_config_version,pending_command_id
-node_1,UNREACHABLE,FAILED,2760668937493375,0.0,3000,6,6,
-node_2,UNREACHABLE,FAILED,2760668938104875,0.0,3000,6,6,
-node_3,UNREACHABLE,FAILED,2760668937566958,0.0,3000,6,6,
+node_1,UNREACHABLE,FAILED,2762075311077333,0.0,3000,6,6,
+node_2,UNREACHABLE,FAILED,2762075308920125,0.0,3000,6,6,
+node_3,UNREACHABLE,FAILED,2762075309016208,0.0,3000,6,6,

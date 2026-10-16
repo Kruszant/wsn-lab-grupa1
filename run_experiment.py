@@ -2,6 +2,8 @@
 
     python run_experiment.py --sink config/sink_adaptacyjna.json --out wyniki/adaptacyjna
     python run_experiment.py --sink config/sink_test_rdzenia.json --out wyniki/test_rdzenia --duration-s 40
+    python run_experiment.py --sink config/sink_test_strat.json --out wyniki/test_strat \
+        --nodes config/node_1_stratny.json config/node_2.json config/node_3.json
 
 Wszystkie procesy dostają TEN SAM time_scale i duration_s (przekazane argumentami), żeby
 nie dało się ich przypadkiem rozjechać. To samo można zrobić ręcznie w czterech terminalach:
@@ -49,5 +51,6 @@ if __name__ == "__main__":
     ap.add_argument("--out", required=True)
     ap.add_argument("--time-scale", type=float)
     ap.add_argument("--duration-s", type=float)
+    ap.add_argument("--nodes", nargs=3, metavar="CFG", help="3 konfiguracje nodów (domyślnie config/node_{1,2,3}.json)")
     a = ap.parse_args()
-    print("Wyniki w:", run(a.sink, a.out, a.time_scale, a.duration_s, quiet=False))
+    print("Wyniki w:", run(a.sink, a.out, a.time_scale, a.duration_s, node_cfgs=a.nodes, quiet=False))

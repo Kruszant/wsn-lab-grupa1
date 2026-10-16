@@ -8,8 +8,8 @@
   "config_version": 3,
   "time_to_critical_s": null,
   "state_time_s": {
-    "STARTING": 1.003,
-    "ACTIVE": 39.01,
+    "STARTING": 1.023,
+    "ACTIVE": 38.982,
     "DEGRADED": 0.0,
     "SLEEP": 0.0,
     "FAILED": 0.0,

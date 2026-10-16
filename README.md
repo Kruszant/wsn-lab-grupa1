@@ -23,15 +23,15 @@ python3 -m venv .venv && .venv/bin/pip install matplotlib       # raz (tylko do 
 # C) analiza (tabela + wykresy) wyłącznie z zapisanych plików
 .venv/bin/python analyze.py --runs wyniki/bez_zarzadzania wyniki/adaptacyjna --labels "Bez zarządzania" "Adaptacyjna" --out wyniki
 
-# D) testy (42)
+# D) testy (43)
 .venv/bin/python -m unittest -v test_wsn
 ```
 
 **Przyspieszenie symulacji.** Instrukcja pozwala przyspieszyć symulację: `time_scale = 10` oznacza, że 1 s czasu
 symulacji trwa 0,1 s rzeczywistej. Wszystkie okresy i progi (500 ms, 2 s, 6 s…) są w **czasie symulacji**; wykresy i
 tabele też. Wszystkie procesy muszą mieć ten sam `time_scale` – `run_experiment.py` przekazuje go każdemu z nich.
-Czas reakcji na polecenie jest mierzony zegarem rzeczywistym i w tabelach przeliczony na „ms symulacji” (×10); np.
-6,9 ms sym. ≈ 0,7 ms rzeczywistej.
+Czas reakcji na polecenie jest mierzony zegarem rzeczywistym i w tabelach przeliczony na „ms symulacji” (×10);
+np. 7 ms sym. ≈ 0,7 ms rzeczywistej.
 
 ## 2. Architektura i porty
 
@@ -49,9 +49,10 @@ NODE n  ◄──────────── CONFIG ────────�
 | `sink_manager.py` | odbiór, **tabela stanu sinka**, polecenia, timeouty/ponowienia, strategia adaptacyjna, dziennik |
 | `run_experiment.py` | uruchamia 4 procesy dla jednego eksperymentu |
 | `analyze.py` | metryki, tabele i wykresy z zapisanych plików |
-| `test_wsn.py` | 42 testy (jednostkowe + integracyjny z prawdziwymi procesami UDP) |
+| `test_wsn.py` | 43 testy (jednostkowe + integracyjny z prawdziwymi procesami UDP) |
 | `config/node_{1,2,3}.json` | konfiguracje trzech nodów |
 | `config/sink_*.json` | konfiguracje sinka: `bez_zarzadzania`, `adaptacyjna`, `adaptacyjna_status`, `adaptacyjna_priorytet`, `test_rdzenia` |
+| `wyniki/test_rdzenia/`, `wyniki/test_strat/` | testy: wspólny rdzeń (ACK/ERROR/duplikat) i ścieżka ze stratami |
 | `wyniki/<przebieg>/` | `management_log.csv`, `status_log.csv`, `data_log.csv`, `state_table.csv`, `run_meta.json`, `<node>_truth.json`, `<node>_energy_trace.csv`, `metrics.json` |
 | `wyniki/tabela_wynikow.md`, `wyniki/wykres_*.png` | wyniki zbiorcze |
 
@@ -143,7 +144,7 @@ Scenariusz `config/sink_test_rdzenia.json` (czasy w s symulacji), przebieg w `wy
 
 | t | Polecenie sinka | Zdarzenia w `management_log.csv` |
 |---|---|---|
-| 8 | `sample_period_ms=1000` → node_1 | `COMMAND_SENT cmd_001` → `ACK_RECEIVED APPLIED`, `config_version 1→2` (`CONFIG_MISMATCH` → `CONFIG_RESTORED`, 6 ms sym.) |
+| 8 | `sample_period_ms=1000` → node_1 | `COMMAND_SENT cmd_001` → `ACK_RECEIVED APPLIED`, `config_version 1→2` (`CONFIG_MISMATCH` → `CONFIG_RESTORED`, kilka ms sym.) |
 | 14 | `sample_period_ms=50` (poza zakresem) | `ERROR_RECEIVED VALUE_OUT_OF_RANGE`, node nadal na wersji 2 (sink cofa `expected` do 2) |
 | 20 | **ten sam** `cmd_002` jeszcze raz | `duplicate_test_resend` → `ERROR_RECEIVED … duplicate_error` (węzeł odesłał zapamiętaną odpowiedź) |
 | 24 | `sample_period_ms=1000` (poprawne) | `cmd_003` → `ACK APPLIED`, wersja 3 |
@@ -152,6 +153,16 @@ Scenariusz `config/sink_test_rdzenia.json` (czasy w s symulacji), przebieg w `wy
 Potwierdzone w `node_1_truth.json` i automatycznie w `test_wsn.TestIntegracja.test_rdzen_ack_error_duplikat`.
 Tabela stanu sinka po teście (`state_table.csv`) zgadza się z raportami nodów: node_1 `reported_config_version = 3`,
 node_2 i node_3 – 1; sink odebrał tyle `DATA`, ile node wysłał (UDP na localhost bez strat).
+
+### Test ze stratami (ścieżka COMMAND_TIMEOUT na prawdziwym UDP)
+
+Na localhost UDP prawie nie gubi pakietów, więc zdarzenie `COMMAND_TIMEOUT` nie występuje w zwykłych przebiegach.
+Żeby je pokazać, `config/node_1_stratny.json` włącza haki testowe: node_1 gubi 40 % odebranych poleceń i 40 % swoich
+odpowiedzi (generator losowy z ziarnem, więc powtarzalnie). Sink wysyła 8 poleceń (`config/sink_test_strat.json`);
+przebieg w `wyniki/test_strat/`. Wynik: wielokrotne `COMMAND_TIMEOUT` i ponowienia **tego samego** `command_id`,
+a node zastosował 8 poleceń, odrzucił 5 duplikatów (`duplicates_ignored = 5`) i skończył na wersji 9 = 1 + 8, czyli
+żadne polecenie nie wykonało się dwa razy mimo zgubionych ACK. Gdy ACK zginął, a node zgłosił już nową wersję w
+`DATA`/`STATUS`, `CONFIG_RESTORED` ma `cause=version_reported_by_node`. Test: `test_stratny_node_ponowienia_bez_podwojnego_wykonania`.
 
 ## 8. Wyniki wariantu Grupy 1
 
@@ -170,7 +181,7 @@ Okno 100 s symulacji – ten sam czas obserwacji dla obu strategii (średnia z 3
 | Bez zarządzania | 0.0 | 151 | 151 | 0 | 75.0 | 0.0 | 0.0 | 21.4 % | 76.0 | 61.0 | 75.0 % |
 | Adaptacyjna | 12.6 | 124 | 124 | 2 | 38.0 | 39.5 | 21.5 | 32.6 % | — | 78.5 | 99.0 % |
 | Adaptacyjna + rzadszy STATUS w SLEEP | 14.3 | 124 | 124 | 2 | 38.0 | 39.5 | 21.5 | 30.7 % | — | 78.5 | 99.0 % |
-| Adaptacyjna + priorytet node_1 | 9.4 | 129 | 129 | 2 | 43.4 | 34.3 | 21.3 | 31.7 % | — | 74.2 | 98.7 % |
+| Adaptacyjna + priorytet node_1 | 9.4 | 129 | 129 | 2 | 43.4 | 34.3 | 21.3 | 31.7 % | — | 74.2 | 99.0 % |
 
 Do końca eksperymentu (200 s; w obu strategiach baterie są wtedy wyczerpane, więc „energia końcowa” = 0 i
 porównanie opiera się na czasie życia i liczbie pomiarów):
@@ -197,24 +208,24 @@ porównanie opiera się na czasie życia i liczbie pomiarów):
 | Strategia | Wysłane polecenia | ACK | ERROR | Skuteczność | Czas reakcji: średnia [ms sym.] | mediana [ms sym.] | maks [ms sym.] | Niespójność config [ms sym.] | Pakiety zarządcze | Pakiety DATA |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
 | Bez zarządzania | 0 | 0 | 0 | — | — | — | — | 0.0 | 123 | 453 |
-| Adaptacyjna | 12 | 12 | 0 | 100.0 % | 6.9 | 6.2 | 12.3 | 83.1 | 237 | 411 |
-| Adaptacyjna + rzadszy STATUS w SLEEP | 15 | 15 | 0 | 100.0 % | 4.8 | 3.6 | 9.9 | 71.6 | 198 | 432 |
-| Adaptacyjna + priorytet node_1 | 12 | 12 | 0 | 100.0 % | 4.2 | 3.8 | 8.2 | 49.9 | 223 | 417 |
+| Adaptacyjna | 12 | 12 | 0 | 100.0 % | 9.4 | 9.4 | 17.0 | 112.6 | 237 | 411 |
+| Adaptacyjna + rzadszy STATUS w SLEEP | 15 | 15 | 0 | 100.0 % | 4.0 | 3.7 | 7.5 | 60.5 | 198 | 432 |
+| Adaptacyjna + priorytet node_1 | 12 | 12 | 0 | 100.0 % | 6.5 | 6.8 | 12.5 | 77.8 | 223 | 417 |
 
 | Strategia | Node | FAILED w t [s] | UNREACHABLE w t [s] | Cisza przed wykryciem [ms] | FAILED -> UNREACHABLE [s] |
 |---|---|---:|---:|---:|---:|
-| Bez zarządzania | node_1 | 76.1 | 82.1 | 6069 | 6.1 |
-| Bez zarządzania | node_2 | 76.0 | 82.1 | 6090 | 6.1 |
-| Bez zarządzania | node_3 | 76.0 | 82.1 | 6076 | 6.1 |
-| Adaptacyjna | node_1 | 137.0 | 143.1 | 6083 | 6.1 |
-| Adaptacyjna | node_2 | 137.0 | 143.1 | 6085 | 6.1 |
+| Bez zarządzania | node_1 | 76.0 | 82.1 | 6111 | 6.1 |
+| Bez zarządzania | node_2 | 76.0 | 82.1 | 6110 | 6.1 |
+| Bez zarządzania | node_3 | 76.0 | 82.1 | 6110 | 6.1 |
+| Adaptacyjna | node_1 | 137.0 | 143.1 | 6073 | 6.1 |
+| Adaptacyjna | node_2 | 137.0 | 143.1 | 6074 | 6.1 |
 | Adaptacyjna | node_3 | 137.0 | 143.1 | 6082 | 6.1 |
-| Adaptacyjna + rzadszy STATUS w SLEEP | node_1 | 157.5 | 175.5 | 18013 | 18.0 |
-| Adaptacyjna + rzadszy STATUS w SLEEP | node_2 | 157.5 | 175.5 | 18007 | 18.0 |
-| Adaptacyjna + rzadszy STATUS w SLEEP | node_3 | 157.5 | 175.5 | 18012 | 18.0 |
-| Adaptacyjna + priorytet node_1 | node_1 | 109.0 | 115.5 | 6107 | 6.4 |
-| Adaptacyjna + priorytet node_1 | node_2 | 137.0 | 143.1 | 6027 | 6.0 |
-| Adaptacyjna + priorytet node_1 | node_3 | 137.0 | 143.7 | 6075 | 6.7 |
+| Adaptacyjna + rzadszy STATUS w SLEEP | node_1 | 157.5 | 175.6 | 18103 | 18.1 |
+| Adaptacyjna + rzadszy STATUS w SLEEP | node_2 | 157.5 | 175.6 | 18124 | 18.1 |
+| Adaptacyjna + rzadszy STATUS w SLEEP | node_3 | 157.5 | 175.6 | 18123 | 18.1 |
+| Adaptacyjna + priorytet node_1 | node_1 | 109.0 | 115.1 | 6039 | 6.0 |
+| Adaptacyjna + priorytet node_1 | node_2 | 137.0 | 143.1 | 6082 | 6.1 |
+| Adaptacyjna + priorytet node_1 | node_3 | 137.0 | 143.1 | 6079 | 6.1 |
 
 ### Obserwacje
 
@@ -224,8 +235,8 @@ porównanie opiera się na czasie życia i liczbie pomiarów):
 - **Decyzja na podstawie obserwacji.** Pierwsza decyzja zapada przy poziomie baterii ok. 48,8, a nie 50,0, bo sink
   widzi tylko co 2 s (STATUS); drugą (SLEEP) wywołuje `ALERT LOW_BATTERY` (poziom 19,85). To opóźnienie decyzji
   wynika z okresu raportowania i jest cechą zarządzania opartego na obserwacji.
-- **Skuteczność poleceń** wyniosła 100 %, czas reakcji ok. 7 ms sym. (≈ 0,7 ms rzeczywistej), łączny czas niespójności
-  konfiguracji to suma tych samych kilku milisekund na polecenie.
+- **Skuteczność poleceń** wyniosła 100 %, czas reakcji średnio 4–9 ms sym. (≈ 0,4–0,9 ms rzeczywistej; zależy od
+  obciążenia komputera), łączny czas niespójności konfiguracji to suma tych samych kilku milisekund na polecenie.
 - **Wykrywanie niedostępności:** FAILED → UNREACHABLE trwa 6,1 s (timeout 6 s); po wydłużeniu okresu STATUS w SLEEP
   do 6 s timeout rośnie do 18 s, więc awaria jest wykrywana trzy razy później – to cena oszczędzania energii na STATUS.
 
@@ -280,6 +291,7 @@ testy to wychwycą – wszystkie 6 mutacji zostało wykrytych).
 | Fałszywy UNREACHABLE po wydłużeniu okresu STATUS | timeout = `max(6 s, 3 × status_period)` | `test_timeout_dostosowany_do_okresu_status` |
 | ALERT wysyłany wielokrotnie | flaga „już wysłany”, jeden alarm przy pierwszym ≤ 20 | `test_alert_low_battery_tylko_raz` |
 | Martwy node odpowiada | po FAILED node milczy, także na polecenia | `test_wyczerpanie_to_failed_i_cisza` |
+| Zgubiony ACK / polecenie | timeout, ponowienie tego samego `command_id`, node nie wykonuje drugi raz | `test_ponowienie_tego_samego_command_id_i_rezygnacja`, test integracyjny ze stratami |
 | Wiele poleceń naraz do jednego noda | max 1 polecenie w locie; kolejne czekają w kolejce | `test_strategia_adaptacyjna_na_podstawie_obserwacji` |
 | Śmieciowe datagramy | `decode()` nie rzuca wyjątku; uszkodzone komunikaty są liczone i ignorowane | `test_decode_nie_wywala_sie_na_smieciach`, `test_uszkodzone_i_nieznane_komunikaty` |
 | Sink kończy przed nodami (rozjazd startu) | zero czasu eksperymentu = pierwszy komunikat + `grace_s` | wykryte na przebiegu: pierwotnie 66 z 78 pomiarów |
@@ -287,9 +299,9 @@ testy to wychwycą – wszystkie 6 mutacji zostało wykrytych).
 
 ## 11. Ograniczenia
 
-- UDP na localhost praktycznie nie gubi pakietów, więc ścieżka ponowień jest przetestowana jednostkowo (fałszywy
-  zegar), a w przebiegach rzeczywistych skuteczność poleceń to 100 %. Node ma haki testowe (`test_hooks.
-  drop_command_prob`, `drop_reply_prob`) do symulacji strat, domyślnie wyłączone.
+- UDP na localhost praktycznie nie gubi pakietów, więc w głównych przebiegach skuteczność poleceń to 100 %. Ścieżkę
+  ponowień sprawdzono jednostkowo (fałszywy zegar) oraz na prawdziwym UDP z hakami testowymi node'a
+  (`test_hooks.drop_command_prob`, `drop_reply_prob`, domyślnie wyłączone) – patrz „Test ze stratami”.
 - Energia jest abstrakcyjna; listening radia nie ma kosztu, więc SLEEP „nic nie kosztuje” poza cyklem 0,01.
 - Wszystkie trzy nody mają ten sam model, więc ich wyniki są niemal identyczne; różnią się tylko ziarnem szumu.
 - Przy bardzo dużym `time_scale` (> ~20) opóźnienia systemowe zaczynają być porównywalne z okresami symulacji.
